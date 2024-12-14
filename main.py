@@ -105,49 +105,48 @@ async def get_info(request: Request):
         return JSONResponse({"error": "URL is required"})
     return JSONResponse(get_video_info(url))
 
+async def get_video_url(url: str):
+    ydl_opts = {
+        'format': 'best',  # 获取最佳质量
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)  # 只获取信息，不下载
+            return {
+                "url": info.get('url'),  # 直接返回视频URL
+                "title": info.get('title'),
+                "duration": info.get('duration'),
+                "author": info.get('uploader'),
+                "description": info.get('description')
+            }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.websocket("/ws/download/{video_id}")
 async def websocket_endpoint(websocket: WebSocket, video_id: str):
     await websocket.accept()
     data = await websocket.receive_json()
     url = data.get("url")
+    
     if not url:
         await websocket.send_json({"error": "URL is required"})
         return
-    
-    def progress_hook(d):
-        if d['status'] == 'downloading':
-            progress = {
-                'status': 'downloading',
-                'downloaded_bytes': d.get('downloaded_bytes', 0),
-                'total_bytes': d.get('total_bytes', 0),
-                'eta': d.get('eta', 0)
-            }
-            asyncio.create_task(websocket.send_json(progress))
-        elif d['status'] == 'finished':
-            progress = {'status': 'finished'}
-            asyncio.create_task(websocket.send_json(progress))
-
-    ydl_opts = {
-        'format': 'best',
-        'progress_hooks': [progress_hook],
-        # 修改为用户下载目录
-        'outtmpl': '%(title)s.%(ext)s'
-    }
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url)
-            # 返回下载链接而不是保存到服务器
-            video_url = info.get('url')
-            await websocket.send_json({
-                'status': 'ready',
-                'download_url': video_url,
-                'info': {
-                    "title": info["title"],
-                    "duration": info["duration"],
-                    "author": info["uploader"],
-                    "description": info["description"]
-                }
-            })
-    except Exception as e:
-        await websocket.send_json({"error": str(e)}) 
+        
+    # 获取视频信息和直接下载链接
+    video_info = await get_video_url(url)
+    if "error" in video_info:
+        await websocket.send_json({"error": video_info["error"]})
+        return
+        
+    # 返回视频信息和下载链接
+    await websocket.send_json({
+        "status": "ready",
+        "download_url": video_info["url"],
+        "info": {
+            "title": video_info["title"],
+            "duration": video_info["duration"],
+            "author": video_info["author"],
+            "description": video_info["description"]
+        }
+    }) 
