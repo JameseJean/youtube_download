@@ -105,7 +105,7 @@ async function startDownload() {
         saveToHistory(data);
         
         // 开始下载并显示进度
-        await downloadWithProgress(data.url);
+        await downloadWithProgress(data.download_url);
         
         // 刷新历史记录显示
         showDownloadHistory();
