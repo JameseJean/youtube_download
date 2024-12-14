@@ -4,7 +4,7 @@ uvicorn==0.15.0         # Web服务器，让网站能跑起来
 jinja2==3.0.1           # 模板引擎，用来渲染HTML页面
 
 # 功能相关
-yt-dlp==2023.3.4        # YouTube下载器，核心功能就靠它
+yt-dlp==2024.3.10        # YouTube下载器，核心功能就靠它
 python-multipart==0.0.5  # 处理文件上传用的
 websockets==10.0        # 处理WebSocket连接，用来显示实时下载进度
 

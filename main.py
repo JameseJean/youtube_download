@@ -16,7 +16,13 @@ if not IS_VERCEL:
 async def get_video_info(url: str):
     ydl_opts = {
         'format': 'best',
+        'cookiesfrombrowser': ('chrome',),  # 从浏览器获取cookies
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,  # 快速提取信息
     }
+    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -28,7 +34,8 @@ async def get_video_info(url: str):
                 "description": info.get('description')
             }
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"下载错误: {str(e)}")
+        return {"error": f"下载失败: {str(e)}"}
 
 @app.get("/")
 async def home(request: Request):
