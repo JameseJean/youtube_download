@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube 视频下载器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 标题部分 -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">YouTube 视频下载器</h1>
+            <p class="text-gray-600">输入YouTube视频链接即可下载到本地</p>
+        </div>
+
+        <!-- 输入部分 -->
+        <div class="max-w-xl mx-auto">
+            <div class="flex gap-2">
+                <input type="text" id="url" 
+                    class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="请输入YouTube视频链接">
+                <button onclick="startDownload()" 
+                    class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    下载
+                </button>
+            </div>
+            
+            <!-- 下载进度 -->
+            <div id="progress" class="mt-4 hidden">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-sm text-gray-600 mt-1"></p>
+            </div>
+        </div>
+
+        <!-- 视频信息 -->
+        <div id="video-info" class="mt-8 max-w-xl mx-auto hidden">
+            <h2 class="text-2xl font-bold mb-4">视频信息</h2>
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <h3 id="video-title" class="font-bold text-lg mb-2"></h3>
+                <p id="video-author" class="text-gray-600 mb-1"></p>
+                <p id="video-duration" class="text-gray-600 mb-1"></p>
+                <p id="video-description" class="text-gray-600"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function startDownload() {
+            const url = document.getElementById('url').value;
+            if (!url) return;
+
+            // 显示进度条
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            progress.classList.remove('hidden');
+
+            // 生成随机ID
+            const videoId = Math.random().toString(36).substring(7);
+
+            // 创建WebSocket连接
+            const ws = new WebSocket(`ws://${window.location.host}/ws/download/${videoId}`);
+            
+            ws.onopen = () => {
+                ws.send(JSON.stringify({url: url}));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.error) {
+                    alert(data.error);
+                    progress.classList.add('hidden');
+                    return;
+                }
+
+                if (data.status === 'downloading') {
+                    const percent = (data.downloaded_bytes / data.total_bytes * 100).toFixed(1);
+                    progressBar.style.width = `${percent}%`;
+                    progressText.textContent = `下载中: ${percent}% - 剩余时间: ${data.eta}秒`;
+                }
+
+                if (data.status === 'ready') {
+                    // 显示视频信息
+                    const videoInfo = document.getElementById('video-info');
+                    videoInfo.classList.remove('hidden');
+                    document.getElementById('video-title').textContent = data.info.title;
+                    document.getElementById('video-author').textContent = `作者: ${data.info.author}`;
+                    document.getElementById('video-duration').textContent = `时长: ${data.info.duration}秒`;
+                    document.getElementById('video-description').textContent = data.info.description;
+                    
+                    // 开始下载
+                    window.location.href = data.download_url;
+                }
+
+                if (data.status === 'finished') {
+                    progressText.textContent = '下载完成!';
+                    setTimeout(() => {
+                        progress.classList.add('hidden');
+                    }, 1000);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket错误:', error);
+                alert('下载出错');
+                progress.classList.add('hidden');
+            };
+        }
+    </script>
+</body>
+</html> 
