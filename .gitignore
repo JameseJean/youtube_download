@@ -33,8 +33,8 @@ ENV/
 *.swo
 
 # Project specific
-downloads/
-downloads.json 
+- downloads/
+- downloads.json
 
 # 但保留public/static目录结构
 !public/

@@ -25,14 +25,6 @@
                     下载
                 </button>
             </div>
-            
-            <!-- 下载进度 -->
-            <div id="progress" class="mt-4 hidden">
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                </div>
-                <p id="progress-text" class="text-sm text-gray-600 mt-1"></p>
-            </div>
         </div>
 
         <!-- 视频信息 -->
@@ -44,6 +36,20 @@
                 <p id="video-duration" class="text-gray-600 mb-1"></p>
                 <p id="video-description" class="text-gray-600"></p>
             </div>
+        </div>
+
+        <!-- 在现有代码中添加进度条部分 -->
+        <div id="progress" class="mt-4 hidden">
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="text-sm text-gray-600 mt-1"></p>
+        </div>
+
+        <!-- 添加下载历史部分 -->
+        <div class="mt-12 max-w-xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4">下载历史</h2>
+            <div id="download-history"></div>
         </div>
     </div>
 </body>
