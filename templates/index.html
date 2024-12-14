@@ -5,6 +5,7 @@
     <script src="/static/js/main.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
@@ -52,5 +53,15 @@
             <div id="download-history"></div>
         </div>
     </div>
+
+    <!-- 确保JS在DOM加载后执行 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 验证函数是否存在
+            if (typeof startDownload !== 'function') {
+                console.error('startDownload function not loaded');
+            }
+        });
+    </script>
 </body>
 </html> 
