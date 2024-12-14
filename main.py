@@ -1,9 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 import yt_dlp
 import os
 import logging
+import random
+import json
+from typing import Optional, Dict, List
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -18,35 +21,69 @@ if not IS_VERCEL:
     from fastapi.staticfiles import StaticFiles
     app.mount("/static", StaticFiles(directory="public/static"), name="static")
 
+# 浏览器标识池
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0'
+]
+
+def get_random_headers() -> Dict[str, str]:
+    return {
+        'User-Agent': random.choice(USER_AGENTS),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Referer': 'https://www.youtube.com/'
+    }
+
 async def get_video_info(url: str):
     ydl_opts = {
         'format': 'best',
         'no_warnings': True,
-        'quiet': True
+        'quiet': True,
+        'extract_flat': True,
+        'http_headers': get_random_headers()
     }
     
     try:
         logger.info(f"开始获取视频信息: {url}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+            try:
+                info = ydl.extract_info(url, download=False)
+            except yt_dlp.utils.ExtractorError as e:
+                if "Sign in to confirm your age" in str(e):
+                    raise HTTPException(status_code=403, detail="需要年龄验证，无法下载")
+                elif "requested format not available" in str(e):
+                    raise HTTPException(status_code=404, detail="请求的视频格式不可用")
+                else:
+                    raise HTTPException(status_code=500, detail=str(e))
+                    
             if not info:
-                logger.error("未能获取视频信息")
-                return {"error": "无法获取视频信息"}
+                raise HTTPException(status_code=404, detail="无法获取视频信息")
                 
             result = {
                 "url": info.get('url'),
                 "title": info.get('title'),
                 "duration": info.get('duration'),
                 "author": info.get('uploader'),
-                "description": info.get('description')
+                "description": info.get('description'),
+                "formats": info.get('formats', [])  # 添加格式选项
             }
-            logger.info(f"成功获取视频信息: {result['title']}")
             return result
             
     except Exception as e:
-        error_msg = f"下载错误: {str(e)}"
+        error_msg = f"下���错误: {str(e)}"
         logger.error(error_msg)
-        return {"error": error_msg}
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/")
 async def home(request: Request):
