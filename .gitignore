@@ -35,3 +35,12 @@ ENV/
 # Project specific
 downloads/
 downloads.json 
+
+# 但保留public/static目录结构
+!public/
+!public/static/
+!public/static/css/
+!public/static/js/
+
+# Learning notes
+Learn.md

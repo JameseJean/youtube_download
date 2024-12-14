@@ -1,7 +1,13 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-python-multipart==0.0.5
-jinja2==3.0.1
-yt-dlp==2023.3.4
-python-dotenv==0.19.0
-websockets==10.0 
+# Web框架相关
+fastapi==0.68.0          # 核心Web框架，用来写API和网站
+uvicorn==0.15.0         # Web服务器，让网站能跑起来
+jinja2==3.0.1           # 模板引擎，用来渲染HTML页面
+
+# 功能相关
+yt-dlp==2023.3.4        # YouTube下载器，核心功能就靠它
+python-multipart==0.0.5  # 处理文件上传用的
+websockets==10.0        # 处理WebSocket连接，用来显示实时下载进度
+
+# 工具类
+python-dotenv==0.19.0   # 用来读取.env配置文件
+aiofiles==0.8.0         # 异步文件处理，处理静态文件用的 

@@ -1,6 +1,5 @@
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, RedirectResponse
 import yt_dlp
 import asyncio
@@ -21,12 +20,18 @@ logger = logging.getLogger(__name__)
 # 获取环境变量
 DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
 MAX_DOWNLOADS = int(os.getenv("MAX_DOWNLOADS", 10))
+IS_VERCEL = os.getenv("VERCEL", False)
 
 # 创建下载目录
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+# 根据环境配置静态文件
+if not IS_VERCEL:
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/static", StaticFiles(directory="public/static"), name="static")
 
 def get_video_info(url: str):
     with yt_dlp.YoutubeDL() as ydl:
